@@ -65,11 +65,11 @@ class ProxyHandler (BaseHTTPServer.BaseHTTPRequestHandler):
         soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             print '[.]self._connect_to ' , self.path
-            if self._connect_to(g_proxy_host_port, soc):
+            if self._connect_to(app.proxy_host_port, soc):
                 print '[v]self._connect_to ' , self.path, soc.getpeername()
                 self.log_request(200)
                 soc.send(self.raw_requestline)
-                self.headers['Proxy-Authorization'] = g_header_authorization
+                self.headers['Proxy-Authorization'] = app.header_authorization
                 self.headers['Connection'] = 'close'
                 for key_val in self.headers.items():
                     soc.send("%s: %s\r\n" % key_val)
@@ -90,14 +90,14 @@ class ProxyHandler (BaseHTTPServer.BaseHTTPRequestHandler):
         soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         fid = None
         try:
-            if self._connect_to(g_proxy_host_port, soc):
+            if self._connect_to(app.proxy_host_port, soc):
                 self.log_request()
                 getStr = "%s %s %s\r\n" % (
                     self.command,
                     urlparse.urlunparse((scm, netloc, path, params, query, '')),
                     self.request_version)
                 soc.send(getStr)
-                self.headers['Proxy-Authorization'] = g_header_authorization
+                self.headers['Proxy-Authorization'] = app.header_authorization
                 self.headers['Connection'] = 'close'
                 del self.headers['Proxy-Connection']
                 for key_val in self.headers.items():
@@ -182,16 +182,16 @@ class App:
                 self.printHelp()
                 sys.exit(1)
             elif o in ('-s', '--server'):
-                g_proxy_host_port = a
+                self.proxy_host_port = a
             elif o in ('-a', '--auth'):
-                g_proxy_user_password = a
+                self.proxy_user_password = a
             elif o in ('-l', '--listen'):
                 port = int(a)
             else:
                 print 'unhandled option'
                 sys.exit(3)
-        g_header_authorization = 'Basic ' + base64.encodestring(g_proxy_user_password);
-        g_header_authorization = g_header_authorization.replace('\n','').replace('\r','');
+        self.header_authorization = 'Basic ' + base64.encodestring(self.proxy_user_password);
+        self.header_authorization = self.header_authorization.replace('\n','').replace('\r','');
         
         sys.argv = ['filename.py', port]
         BaseHTTPServer.test(ProxyHandler, ThreadingHTTPServer)
