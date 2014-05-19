@@ -27,8 +27,8 @@ class TextFileHelper:
     @staticmethod
     def smartUnicode(data):
         test = chardet.detect(data);
-        if test.confidence > 0.5:          
-            return data.decode(test.encoding);
+        if test['confidence'] > 0.5:          
+            return data.decode(test['encoding']);
         return data.decode('GB2312'); #在CN中文大多数采用GB2312编码
     
     @staticmethod
@@ -38,10 +38,10 @@ class TextFileHelper:
                 return 'utf-8';
             else:
                 test = chardet.detect(data);
-                return test.encoding;
+                return test['encoding'];
         else:
             test = chardet.detect(data);
-            return test.encoding;
+            return test['encoding'];
     
     @staticmethod
     def getUnicode(data):
@@ -49,9 +49,9 @@ class TextFileHelper:
             if data[:3] == codecs.BOM_UTF8:
                 data = data[3:].decode('utf-8');
             else:
-                data = smartUnicode(data)
+                data = TextFileHelper.smartUnicode(data)
         else:
-            data = smartUnicode(data)
+            data = TextFileHelper.smartUnicode(data)
         return data
 
     @staticmethod
