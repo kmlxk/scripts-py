@@ -29,7 +29,7 @@ class TextFileHelper:
         test = chardet.detect(data);
         if test['confidence'] > 0.5:          
             return data.decode(test['encoding']);
-        return data.decode('GB2312'); #在CN中文大多数采用GB2312编码
+        return data.decode('GB2312'); #鍦–N涓枃澶у鏁伴噰鐢℅B2312缂栫爜
     
     @staticmethod
     def getEncoding(data):
