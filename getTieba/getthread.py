@@ -152,24 +152,34 @@ class NewsHelper:
         self.repo.add(title, content)
 
 class DiscuzAdapter:
+
+    def httppost(self, url, data):
+        params = urllib.urlencode(data)
+        req = urllib2.Request(url, params)
+        res = urllib2.urlopen(req)
+        html = res.read()
+        return html
     
     def addUser(self, username):
-        params = urllib.urlencode({'username': username})
-        url = 'http://localhost:9000/discuzAdapter/?r=WebService/AddUser'
-        req = urllib2.Request(url, params)
-        res = urllib2.urlopen(req)
-        html = res.read()
-        print html
+        params = {'username': username}
+        url = 'http://localhost:9000/discuzAdapter/?r=WebService/addUser'
+        return self.httppost(url, params)
     
     def addUserAvatar(self, username, url):
-        params = urllib.urlencode({'username': username, 'url': url})
-        url = 'http://localhost:9000/discuzAdapter/?r=WebService/AddUserAvatar'
-        req = urllib2.Request(url, params)
-        res = urllib2.urlopen(req)
-        html = res.read()
-        print html
+        params = {'username': username, 'url': url}
+        url = 'http://localhost:9000/discuzAdapter/?r=WebService/addUserAvatar'
+        return self.httppost(url, params)
 
-        
+    
+    def addThread(self, dictData):
+        params = dictData
+        url = 'http://localhost:9000/discuzAdapter/?r=WebService/addThread'
+        return self.httppost(url, params)
+
+    def addPost(self, dictData):
+        params = dictData
+        url = 'http://localhost:9000/discuzAdapter/?r=WebService/addPost'
+        return self.httppost(url, params)
 
 class App:
     
@@ -177,8 +187,11 @@ class App:
         self.NewsHelper = NewsHelper()
         self.discuz = DiscuzAdapter()
         pass
-    
+
     def run(self):
+        self.parseThread()
+
+    def parseThread(self):
         html = commonlang.TextFileHelper.read('item.html');
         soup = BeautifulSoup(html)
         tags = soup.find_all('div', class_='l_post')
@@ -187,11 +200,23 @@ class App:
             user = self.getUser(tag)
             print "# POST"
             print user[0], user[1]
-            print self.getContent(tag)
+            title = self.getTitle(soup)
+            content = self.getContent(tag)
+            print title, content
             if count == 1:
-                self.discuz.addUser(user[0])
-                self.discuz.addUserAvatar(user[0], user[1])
-                break;
+                print self.discuz.addUser(user[0])
+                print self.discuz.addUserAvatar(user[0], user[1])
+                ret = self.discuz.addThread({'sample_name': 'sample_thread_college', 'username': user[0], 'title': title, 'content': content})
+                print ret
+                obj = json.loads(ret)
+                if obj['success']:
+                    threadId = obj['data']['tid']
+                else:
+                    break;
+            else:
+                print self.discuz.addUser(user[0])
+                print self.discuz.addUserAvatar(user[0], user[1])
+                print self.discuz.addPost({'threadid': threadId, 'sample_name': 'sample_post_college', 'username': user[0], 'content': content})
             count+=1
         pass
 
@@ -203,7 +228,10 @@ class App:
 
     def getContent(self, tag):
         tag = tag.find('div', class_ = 'd_post_content')
-        return tag
+        return str(tag)
+    def getTitle(self, soap):
+        tag = soap.find('h1', class_ = 'core_title_txt')
+        return str(''.join(tag.stripped_strings))
 
     def run1(self):
         html = commonlang.TextFileHelper.read('list.html');
