@@ -146,8 +146,8 @@ class NewsHelper:
     def saveToDb(self, html):
         parser = HtmlContentParser()
         content = parser.getContent(html)
-        content = filters.strip_tags(content)
         filters = FilterTag.FilterTag()
+        content = filters.strip_tags(content)
         title = parser.getTitle(html)
         self.repo.add(title, content)
 
@@ -155,9 +155,13 @@ class DiscuzAdapter:
 
     def httppost(self, url, data):
         params = urllib.urlencode(data)
-        req = urllib2.Request(url, params)
-        res = urllib2.urlopen(req)
-        html = res.read()
+        html = ''
+        try:
+            req = urllib2.Request(url, params)
+            res = urllib2.urlopen(req)
+            html = res.read()
+        except Exception, ex:
+            print Exception,":httppost:",ex
         return html
     
     def addUser(self, username):
@@ -181,12 +185,17 @@ class DiscuzAdapter:
         url = 'http://localhost:9000/discuzAdapter/?r=WebService/addPost'
         return self.httppost(url, params)
 
+    def toBBCode(self, html):
+        re1 = re.compile('<img[^>]*?src="(.*?)"[^>]*?>', re.IGNORECASE)
+        result, number = re1.subn(lambda x:'\n[img]'+x.group(1)+'[/img]\n', html)
+        return result
+
 class App:
     
     def __init__(self):
         self.NewsHelper = NewsHelper()
         self.discuz = DiscuzAdapter()
-        pass
+        self.tagfilter = FilterTag.FilterTag()
 
     def run(self):
         self.parseThread()
@@ -202,11 +211,17 @@ class App:
             print user[0], user[1]
             title = self.getTitle(soup)
             content = self.getContent(tag)
-            print title, content
+            datafield = tag['data-field']
+            created = re.findall('\d{4}-\d{2}-\d{2} \d{2}:\d{2}', str(datafield));
+            created = created[0] + ':00'
+            bbcode = self.discuz.toBBCode(content)
+            bbcode = self.tagfilter.strip_tags(bbcode)
+            content = bbcode
             if count == 1:
                 print self.discuz.addUser(user[0])
-                print self.discuz.addUserAvatar(user[0], user[1])
-                ret = self.discuz.addThread({'sample_name': 'sample_thread_college', 'username': user[0], 'title': title, 'content': content})
+                if user[1].find('head_80.jpg') < 0:
+                    print self.discuz.addUserAvatar(user[0], user[1])
+                ret = self.discuz.addThread({'sample_name': 'sample_thread_college', 'username': user[0], 'title': title, 'created':created, 'content': content})
                 print ret
                 obj = json.loads(ret)
                 if obj['success']:
@@ -215,20 +230,22 @@ class App:
                     break;
             else:
                 print self.discuz.addUser(user[0])
-                print self.discuz.addUserAvatar(user[0], user[1])
-                print self.discuz.addPost({'threadid': threadId, 'sample_name': 'sample_post_college', 'username': user[0], 'content': content})
+                if user[1].find('head_80.jpg') < 0:
+                    print self.discuz.addUserAvatar(user[0], user[1])
+                print self.discuz.addPost({'threadid': threadId, 'sample_name': 'sample_post_college', 'username': user[0], 'created':created, 'content': content})
             count+=1
         pass
 
     def getUser(self, tag):
         tag = tag.find('div', class_ = 'd_author')
         tag = tag.find('img')
-        ret = (tag['username'], tag['src'])
+        ret = (str(tag['username']), str(tag['src']))
         return ret
 
     def getContent(self, tag):
-        tag = tag.find('div', class_ = 'd_post_content')
-        return str(tag)
+        content = tag.find('div', class_ = 'd_post_content')
+        return str(content)
+
     def getTitle(self, soap):
         tag = soap.find('h1', class_ = 'core_title_txt')
         return str(''.join(tag.stripped_strings))
