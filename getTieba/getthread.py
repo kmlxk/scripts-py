@@ -2,11 +2,7 @@
 #coding=gbk
 # -*- coding: gbk -*-
 #
-# Copyright 2012 Channing Wong
-#
-# @mail: channing.wong@yahoo.com
-# @home: http://blog.3363.me/
-# @date: Mar 3, 2012
+# 抓取百度贴吧的帖子，导入到discuz论坛中
 #
  
 import json
@@ -24,6 +20,12 @@ import math
 import FilterTag
 import sqlite3
 from bs4 import BeautifulSoup
+
+import logging
+import logging.config
+logging.config.fileConfig("getthread.log.conf")
+logger = logging.getLogger("filelog")
+
 
 reload(sys)
 sys.setdefaultencoding( "utf-8" )
@@ -187,28 +189,36 @@ class DiscuzAdapter:
 
     def toBBCode(self, html):
         re1 = re.compile('<img[^>]*?src="(.*?)"[^>]*?>', re.IGNORECASE)
-        result, number = re1.subn(lambda x:'\n[img]'+x.group(1)+'[/img]\n', html)
+        result, number = re1.subn(lambda x:'\n[img]http://localhost:9000/discuz/remoteimg.php?url='+x.group(1)+'[/img]\n', html)
         return result
 
 class App:
     
     def __init__(self):
-        self.NewsHelper = NewsHelper()
+        self.newsHelper = NewsHelper()
         self.discuz = DiscuzAdapter()
         self.tagfilter = FilterTag.FilterTag()
 
     def run(self):
-        self.parseThread()
+        #html = commonlang.TextFileHelper.read('list.html');
+        url = 'http://tieba.baidu.com/f?kw=%B1%A3%C9%BD%D1%A7%D4%BA' 
+        #保山学院
+        html = self.newsHelper.fetch(url)
+        links = self.getLinks(html)
+        for link in links:
+            print link[0], link[1]
+            url = 'http://tieba.baidu.com/' + link[0]
+            content = self.newsHelper.fetch(url)
+            self.parseThread(content)
 
-    def parseThread(self):
-        html = commonlang.TextFileHelper.read('item.html');
+    def parseThread(self, html):
+        #html = commonlang.TextFileHelper.read('item.html');
         soup = BeautifulSoup(html)
         tags = soup.find_all('div', class_='l_post')
         count = 1
         for tag in tags:
             user = self.getUser(tag)
-            print "# POST"
-            print user[0], user[1]
+            print "# POST " , count
             title = self.getTitle(soup)
             content = self.getContent(tag)
             datafield = tag['data-field']
@@ -218,21 +228,26 @@ class App:
             bbcode = self.tagfilter.strip_tags(bbcode)
             content = bbcode
             if count == 1:
-                print self.discuz.addUser(user[0])
+                ret = self.discuz.addUser(user[0])
+                logger.debug(ret)
                 if user[1].find('head_80.jpg') < 0:
-                    print self.discuz.addUserAvatar(user[0], user[1])
+                    ret = self.discuz.addUserAvatar(user[0], user[1])
+                    logger.debug(ret)
                 ret = self.discuz.addThread({'sample_name': 'sample_thread_college', 'username': user[0], 'title': title, 'created':created, 'content': content})
-                print ret
+                logger.debug(ret)
                 obj = json.loads(ret)
                 if obj['success']:
                     threadId = obj['data']['tid']
                 else:
                     break;
             else:
-                print self.discuz.addUser(user[0])
+                ret = self.discuz.addUser(user[0])
+                logger.debug(ret)
                 if user[1].find('head_80.jpg') < 0:
-                    print self.discuz.addUserAvatar(user[0], user[1])
-                print self.discuz.addPost({'threadid': threadId, 'sample_name': 'sample_post_college', 'username': user[0], 'created':created, 'content': content})
+                    ret = self.discuz.addUserAvatar(user[0], user[1])
+                    logger.debug(ret)
+                ret = self.discuz.addPost({'threadid': threadId, 'sample_name': 'sample_post_college', 'username': user[0], 'created':created, 'content': content})
+                logger.debug(ret)
             count+=1
         pass
 
@@ -250,19 +265,12 @@ class App:
         tag = soap.find('h1', class_ = 'core_title_txt')
         return str(''.join(tag.stripped_strings))
 
-    def run1(self):
-        html = commonlang.TextFileHelper.read('list.html');
-        links = self.getLinks(html)
-        for link in links:
-            print link[0], link[1]
-        pass
-
     def getLinks(self, html):
         links = re.findall('<a\s+.*?href="(/p/[^"]*?)"\s+.*?>(.*?)</a>', html);
         return links;
     
     def save(self):
-        html = self.NewsHelper.fetch('http://news.qq.com/');
+        html = self.newsHelper.fetch('http://news.qq.com/');
         commonlang.TextFileHelper.write('qqindex.html', html);
         
     def gethtml(self):
