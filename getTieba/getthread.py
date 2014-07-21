@@ -209,9 +209,10 @@ class App:
             print link[0], link[1]
             url = 'http://tieba.baidu.com/' + link[0]
             content = self.newsHelper.fetch(url)
-            self.parseThread(content)
+            fid = 36
+            self.parseThread(content, fid)
 
-    def parseThread(self, html):
+    def parseThread(self, html, fid):
         #html = commonlang.TextFileHelper.read('item.html');
         soup = BeautifulSoup(html)
         tags = soup.find_all('div', class_='l_post')
@@ -233,7 +234,7 @@ class App:
                 if user[1].find('head_80.jpg') < 0:
                     ret = self.discuz.addUserAvatar(user[0], user[1])
                     logger.debug(ret)
-                ret = self.discuz.addThread({'sample_name': 'sample_thread_college', 'username': user[0], 'title': title, 'created':created, 'content': content})
+                ret = self.discuz.addThread({'fid': fid, 'username': user[0], 'title': title, 'created':created, 'content': content})
                 logger.debug(ret)
                 obj = json.loads(ret)
                 if obj['success']:
@@ -246,7 +247,7 @@ class App:
                 if user[1].find('head_80.jpg') < 0:
                     ret = self.discuz.addUserAvatar(user[0], user[1])
                     logger.debug(ret)
-                ret = self.discuz.addPost({'threadid': threadId, 'sample_name': 'sample_post_college', 'username': user[0], 'created':created, 'content': content})
+                ret = self.discuz.addPost({'threadid': threadId, 'username': user[0], 'created':created, 'content': content})
                 logger.debug(ret)
             count+=1
         pass
