@@ -28,6 +28,7 @@ from bs4 import BeautifulSoup
 # customed
 import commonlang
 import FilterTag
+import DiscuzAdapter
 
 # logging
 import logging
@@ -45,59 +46,10 @@ sys.setdefaultencoding( "gbk" )
 __author__="kmlxk@163.com"
 __date__ ="$2014-7-18 13:48:13$"
 
-def gb2utf8(s):
-    return s.encode('utf-8')
-    # print s, chardet.detect(s)
-    # return s.encode('utf-8')
-
-class DiscuzAdapter:
-    
-    def __init__(self, baseurl):
-        self.baseurl = baseurl;
-        pass
-
-    def httppost(self, url, data):
-        params = urllib.urlencode(data)
-        html = ''
-        try:
-            logger.debug('post: ' + url + ', ' + params)
-            req = urllib2.Request(url, params)
-            # req.add_header("Content-Type", "text/html; charset=utf-8")
-            res = urllib2.urlopen(req)
-            html = res.read()
-        except Exception, ex:
-            print Exception,":httppost:",ex
-        return html
-    
-    def addUser(self, username):
-        params = {'username': gb2utf8(username)}
-        url = self.baseurl + '/index.php?r=WebService/addUser'
-        return self.httppost(url, params)
-    
-    def addUserAvatar(self, username, url):
-        params = {'username': gb2utf8(username), 'url': url}
-        url = self.baseurl + '/index.php?r=WebService/addUserAvatar'
-        return self.httppost(url, params)
-    
-    def addThread(self, dictData):
-        params = dictData
-        url = self.baseurl + '/index.php?r=WebService/addThread'
-        return self.httppost(url, params)
-
-    def addPost(self, dictData):
-        params = dictData
-        url = self.baseurl + '/index.php?r=WebService/addPost'
-        return self.httppost(url, params)
-
-    def toBBCode(self, html):
-        re1 = re.compile('<img[^>]*?src="(.*?)"[^>]*?>', re.IGNORECASE)
-        result, number = re1.subn(lambda x:'\n[img]http://bbs.com/remoteimg.php?url='+x.group(1)+'[/img]\n', html)
-        return result
-
 class Tieba:
     
     def __init__(self, adapterUrl):
-        self.discuz = DiscuzAdapter(adapterUrl)
+        self.discuz = DiscuzAdapter.DiscuzAdapter(adapterUrl, logger)
         self.tagfilter = FilterTag.FilterTag()
     
     # 处理首页
@@ -243,7 +195,7 @@ def main():
     app = App()
     argv = sys.argv
     #这是方便调试用的
-    argv = ['filename.py', '-a', r'http://bbs.com/discuzAdapter', '-k', '保山', '-e', '吧规|广告', '--fid', '38']
+    argv = ['filename.py', '-a', r'http://bbs.com/discuzadapter', '-k', '保山', '-e', '吧规|广告', '--fid', '38']
     app.main(argv)
 
 if __name__ == '__main__':

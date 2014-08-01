@@ -1,3 +1,5 @@
 *.pyc
 
 /getTieba/*.log
+
+/discuzbuild/*.log
