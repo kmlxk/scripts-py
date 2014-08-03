@@ -60,8 +60,7 @@ class Tieba:
     def parseList(self, keyword, excludekey, fid):
         #html = commonlang.TextFileHelper.read('list.html');
         print 'get list'
-        url = 'http://tieba.baidu.com/f?kw=%B1%A3%C9%BD%D1%A7%D4%BA' 
-        #保山学院
+        url = 'http://tieba.baidu.com/f?' + urllib.urlencode({'kw': unicode(keyword).encode('utf-8')});
         html = commonlang.HttpHelper.get(url)
         links = self.getLinks(html)
         excludekeys = excludekey.split('|')
@@ -198,7 +197,8 @@ def main():
     app = App()
     argv = sys.argv
     #这是方便调试用的
-    argv = ['filename.py', '-a', r'http://bbs.com/discuzadapter', '-k', '保山', '-e', '吧规|广告', '--fid', '38']
+    if len(argv) == 1:
+        argv = ['filename.py', '-a', r'http://bbs.com/discuzadapter', '-k', '保山', '-e', '吧规|广告', '--fid', '40']
     app.main(argv)
 
 if __name__ == '__main__':

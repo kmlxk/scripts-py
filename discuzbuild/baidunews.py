@@ -82,16 +82,12 @@ class BaiduNews:
             content = commonlang.HttpHelper.get(url)
             print 'parse news'
             self.parseNews(title, content, date, fid)
-            return
 
     def parseNews(self, title, html, date, fid):
         content = self.htmlParser.getContent(html)
-        content = self.tagfilter.strip_tags(content)
-        print title.decode('utf-8')
-        print content.decode('utf-8')
-        ret = self.discuz.addThread({'fid': fid, 'username': 'admin', 'title': title.encode('utf-8'), 'created':date, 'content': content.encode('utf-8')})
+        content = self.tagfilter.filterHtmlTag(content)
+        ret = self.discuz.addThread({'fid': fid, 'username': 'admin', 'title': title.encode('utf-8'), 'created':date, 'content': content})
         logger.debug("addThread: " + ret)
-        return
 
     def getLinks(self, html):
         links = re.findall('<h3\s+class="c-title"><a[^>]*?href="([^"]*?)"[^>]*?>(.*?)</a>.*?<span class="c-author">(.*?)</span>', html);
@@ -146,7 +142,7 @@ def main():
     app = App()
     argv = sys.argv
     #这是方便调试用的
-    argv = ['filename.py', '-a', r'http://bbs.com/discuzadapter', '-k', '保山', '-e', '吧规|广告', '--fid', '38']
+    argv = ['filename.py', '-a', r'http://bbs.com/discuzadapter', '-k', '保山', '-e', '吧规|广告', '--fid', '2']
     app.main(argv)
 
 if __name__ == '__main__':
