@@ -18,7 +18,6 @@ import types
 import urllib
 import urllib2
 import codecs
-import math
 
 import chardet
 
@@ -42,9 +41,14 @@ sys.setdefaultencoding( "gbk" )
 # 编码是个很纠结的问题
 # console codec: gbk
 # log codec: title.encode('utf-8')
-
+# http codec: utf-8
 __author__="kmlxk@163.com"
 __date__ ="$2014-7-18 13:48:13$"
+
+def gb2utf8(s):
+    return s.encode('utf-8')
+    # print s, chardet.detect(s)
+    # return s.encode('utf-8')
 
 class Tieba:
     
@@ -87,7 +91,6 @@ class Tieba:
             print " #Post " + str(count) 
             title = self.getTitle(soup)
             content = self.getContent(tag)
-            content = content.decode('utf-8')
             username = user[0]
             datafield = tag['data-field']
             created = re.findall('\d{4}-\d{2}-\d{2} \d{2}:\d{2}', str(datafield));
@@ -96,10 +99,10 @@ class Tieba:
             bbcode = self.tagfilter.strip_tags(bbcode)
             content = bbcode
             if count == 1:
-                ret = self.discuz.addUser(user[0])
+                ret = self.discuz.addUser(gb2utf8(username))
                 logger.debug(ret)
                 if user[1].find('head_80.jpg') < 0:
-                    ret = self.discuz.addUserAvatar(user[0], user[1])
+                    ret = self.discuz.addUserAvatar(gb2utf8(username), user[1])
                     logger.debug(ret)
                 ret = self.discuz.addThread({'fid': fid, 'username': username.encode('utf-8'), 'title': title.encode('utf-8'), 'created':created, 'content': content.encode('utf-8')})
                 logger.debug("addThread: " + ret)
@@ -128,11 +131,11 @@ class Tieba:
 
     def getContent(self, tag):
         content = tag.find('div', class_ = 'd_post_content')
-        return str(content)
+        return unicode(content)
 
     def getTitle(self, soap):
         tag = soap.find('h1', class_ = 'core_title_txt')
-        return str(''.join(tag.stripped_strings))
+        return unicode(''.join(tag.stripped_strings))
 
     def getLinks(self, html):
         links = re.findall('<div class="([^"]+)">[^<]*<a\s+.*?href="(/p/[^"]*?)".*?>(.*?)</a>', html);

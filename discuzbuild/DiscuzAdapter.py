@@ -2,10 +2,6 @@ import re
 import urllib
 import urllib2
 
-def gb2utf8(s):
-    return s.encode('utf-8')
-    # print s, chardet.detect(s)
-    # return s.encode('utf-8')
 
 class DiscuzAdapter:
     
@@ -27,12 +23,12 @@ class DiscuzAdapter:
         return html
     
     def addUser(self, username):
-        params = {'username': gb2utf8(username)}
+        params = {'username': username}
         url = self.baseurl + '/index.php?r=WebService/addUser'
         return self.httppost(url, params)
     
     def addUserAvatar(self, username, url):
-        params = {'username': gb2utf8(username), 'url': url}
+        params = {'username': username, 'url': url}
         url = self.baseurl + '/index.php?r=WebService/addUserAvatar'
         return self.httppost(url, params)
     
