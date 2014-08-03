@@ -66,6 +66,10 @@ class BaiduNews:
         for link in links:
             url = link[0]
             title = link[1]
+            authordate = link[2]
+            dates = re.findall('\d{4}\-\d{1,2}\-\d{1,2}\s\d{1,2}\:\d{1,2}\:\d{1,2}', authordate);
+            date = dates[0]
+            author = authordate.replace(date, '')
             title = self.tagfilter.strip_tags(title)
             isExclude = False
             for ex in excludekeys:
@@ -74,23 +78,23 @@ class BaiduNews:
                     break
             if isExclude:
                 continue
-            print 'get news: ', title
+            print 'get news: ', title.decode('utf-8'), author.decode('utf-8')
             content = commonlang.HttpHelper.get(url)
             print 'parse news'
-            self.parseNews(title, content, fid)
+            self.parseNews(title, content, date, fid)
             return
 
-    def parseNews(self, title, html, fid):
+    def parseNews(self, title, html, date, fid):
         content = self.htmlParser.getContent(html)
         content = self.tagfilter.strip_tags(content)
         print title.decode('utf-8')
         print content.decode('utf-8')
-        ret = self.discuz.addThread({'fid': fid, 'username': 'admin', 'title': title.encode('utf-8'), 'created':created, 'content': content.encode('utf-8')})
+        ret = self.discuz.addThread({'fid': fid, 'username': 'admin', 'title': title.encode('utf-8'), 'created':date, 'content': content.encode('utf-8')})
         logger.debug("addThread: " + ret)
         return
 
     def getLinks(self, html):
-        links = re.findall('<h3\s+class="c-title"><a\s+href="([^"]*?)"[^>]*?>(.*?)</a>', html);
+        links = re.findall('<h3\s+class="c-title"><a[^>]*?href="([^"]*?)"[^>]*?>(.*?)</a>.*?<span class="c-author">(.*?)</span>', html);
         return links;
 
 class App:
