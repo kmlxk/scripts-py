@@ -85,75 +85,13 @@ class BaiduNews:
         content = self.tagfilter.strip_tags(content)
         print title.decode('utf-8')
         print content.decode('utf-8')
+        ret = self.discuz.addThread({'fid': fid, 'username': 'admin', 'title': title.encode('utf-8'), 'created':created, 'content': content.encode('utf-8')})
+        logger.debug("addThread: " + ret)
         return
-        #html = commonlang.TextFileHelper.read('item.html');
-        soup = BeautifulSoup(html)
-        print soup.originalEncoding
-        tags = soup.find_all('div', class_='l_post')
-        count = 1
-        for tag in tags:
-            user = self.getUser(tag)
-            print " #Post " + str(count) 
-            title = self.getTitle(soup)
-            content = self.getContent(tag)
-            content = content.decode('utf-8')
-            username = user[0]
-            datafield = tag['data-field']
-            created = re.findall('\d{4}-\d{2}-\d{2} \d{2}:\d{2}', str(datafield));
-            created = created[0] + ':00'
-            bbcode = self.discuz.toBBCode(content)
-            bbcode = self.tagfilter.strip_tags(bbcode)
-            content = bbcode
-            if count == 1:
-                ret = self.discuz.addUser(gb2utf8(username))
-                logger.debug(ret)
-                if user[1].find('head_80.jpg') < 0:
-                    ret = self.discuz.addUserAvatar(gb2utf8(username), user[1])
-                    logger.debug(ret)
-                ret = self.discuz.addThread({'fid': fid, 'username': username.encode('utf-8'), 'title': title.encode('utf-8'), 'created':created, 'content': content.encode('utf-8')})
-                logger.debug("addThread: " + ret)
-                obj = json.loads(ret)
-                if obj['success']:
-                    threadId = obj['data']['tid']
-                else:
-                    break;
-            else:
-                ret = self.discuz.addUser(user[0])
-                logger.debug(ret)
-                if user[1].find('head_80.jpg') < 0:
-                    ret = self.discuz.addUserAvatar(user[0], user[1])
-                    logger.debug(ret)
-                ret = self.discuz.addPost({'threadid': threadId, 'username': username.encode('utf-8'), 'created':created, 'content': content.encode('utf-8')})
-                logger.debug(ret)
-            count+=1
-        pass
-
-    def getUser(self, tag):
-        tag = tag.find('div', class_ = 'd_author')
-        tag = tag.find('img')
-        ret = (str(tag['username']), str(tag['src']))
-        #ret = (tag['username'], tag['src'])
-        return ret
-
-    def getContent(self, tag):
-        content = tag.find('div', class_ = 'd_post_content')
-        return str(content)
-
-    def getTitle(self, soap):
-        tag = soap.find('h1', class_ = 'core_title_txt')
-        return str(''.join(tag.stripped_strings))
 
     def getLinks(self, html):
         links = re.findall('<h3\s+class="c-title"><a\s+href="([^"]*?)"[^>]*?>(.*?)</a>', html);
         return links;
-    
-    def save(self):
-        html = commonlang.HttpHelper.get('http://news.qq.com/');
-        commonlang.TextFileHelper.write('qqindex.html', html);
-        
-    def gethtml(self):
-        html = commonlang.TextFileHelper.read('news1.html');
-        return html
 
 class App:
 
@@ -161,10 +99,10 @@ class App:
     帮助信息
     """
     def printHelp(self):
-        print 'scripts-py.discuzbuild.tieba.py'
-        print '=== 百度贴吧帖子抓取 ==='
+        print 'scripts-py.discuzbuild.baidunews.py'
+        print '=== 百度新闻抓取 ==='
         print '=== Usage ==='
-        print 'python tieba.py -d 项目路径';
+        print 'python baidunews.py -d 项目路径';
         print '-h,--help: 打印帮助';
         print '-d,--dirpath : 项目文件夹路径';
             
