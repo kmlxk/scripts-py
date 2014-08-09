@@ -8,6 +8,9 @@ import re
 import chardet
 import urllib
 
+import socket
+socket.setdefaulttimeout(30)
+
 class HttpHelper:
     
     @staticmethod

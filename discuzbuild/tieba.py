@@ -61,9 +61,13 @@ class Tieba:
         #html = commonlang.TextFileHelper.read('list.html');
         print 'get list'
         url = 'http://tieba.baidu.com/f?' + urllib.urlencode({'kw': unicode(keyword).encode('utf-8')});
-        html = commonlang.HttpHelper.get(url)
+        try:
+            html = commonlang.HttpHelper.get(url)
+        except urllib.error.URLError as ex:
+            print '超时或者url错误: ' , ex
+            return
         links = self.getLinks(html)
-        excludekeys = excludekey.split('|')
+        excludekeys = excludekey.split(',')
         for link in links:
             title = link[2]
             isExclude = False
@@ -75,7 +79,11 @@ class Tieba:
                 continue
             print 'get thread: ', title
             url = 'http://tieba.baidu.com/' + link[1]
-            content = commonlang.HttpHelper.get(url)
+            try:
+                content = commonlang.HttpHelper.get(url)
+            except urllib.error.URLError as ex:
+                print '超时或者url错误: ' , ex
+                continue
             print 'parse thread'
             self.parseThread(content, fid)
 
@@ -198,7 +206,7 @@ def main():
     argv = sys.argv
     #这是方便调试用的
     if len(argv) == 1:
-        argv = ['filename.py', '-a', r'http://bbs.com/discuzadapter', '-k', '保山', '-e', '吧规|广告', '--fid', '40']
+        argv = ['filename.py', '-a', r'http://bbs.com/discuzadapter', '-k', '保山学院', '-e', '吧规,广告', '--fid', '38']
     app.main(argv)
 
 if __name__ == '__main__':
