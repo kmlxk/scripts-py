@@ -20,6 +20,7 @@ import threading
 import collections
 import getopt
 import types
+import socket
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -93,18 +94,15 @@ class App:
     def printHelp(self):
         print 'httptelnet.py'
         print '===Usage==='
-        print 'python TinyHTTPProxy.py -s host:port -a user:pass'
+        print 'python httptelnet.py -l http://www.portso.com.cn/apps/deDaemon.php -u userid'
         print '-h,--help: print help message.'
-        print '-l,--listen: 向外开放的代理服务端口'
-        print '-s,--server: 一级代理服务器ip:端口'
-        print '-a,--auth: 一级代理服务器的用户名密码，例如domain\username:password'
+        print '-l,--listen: 服务接口地址'
+        print '-u,--uid: 用户id'
 
-    """
-    程序入口main
-    """
-    def main(self, argv):
+    def loadParameters(self, argv):
+        self.uid = 'auto'
         try:
-            opts, args = getopt.getopt(argv[1:], 'hl:', ['help', 'listen='])
+            opts, args = getopt.getopt(argv[1:], 'hl:u:', ['help', 'listen=', 'uid='])
         except getopt.GetoptError, err:
             print str(err)
             self.printHelp()
@@ -115,34 +113,38 @@ class App:
                 sys.exit(1)
             elif key in ('-l', '--listen'):
                 self.url = value
+            elif key in ('-u', '--uid'):
+                self.uid = value
             else:
                 print 'unhandled option'
                 sys.exit(3)
-    
+        if self.uid == 'auto':
+            self.uid = socket.gethostname()
+        print 'startup httptelnet server...  uid:', self.uid
+
     def run(self):
         httpclient = HttpClient()
         while True:
-            strJson = httpclient.get(self.url + '?r=comet/subscribe&names=httptelnet-cmd')
-            obj = json.loads(strJson)
-            print strJson
-            print obj
-            if type(obj) is types.DictType and obj.has_key('success') and obj['success'] == True: 
-                if obj['data']['status'] == 1:
-                    for k in obj['data']['events']:
-                        cmd = obj['data']['events'][k]
-                        print '[cmd]', cmd
-                        lines = os.popen(cmd).readlines()
-                        # ret = os.system(cmd)
-                        print lines
-                        post = ''.join(lines)
-                        post = post.decode('gbk')
-                        print post
-                        httpclient.post(self.url + '?r=comet/publish&name=httptelnet-ret', urllib.urlencode({'memo':post}))
-        
+            try:
+                strJson = httpclient.get(self.url + '?r=comet/subscribe&names=httptelnet-'+self.uid+'-cmd')
+                obj = json.loads(strJson)
+                if type(obj) is types.DictType and obj.has_key('success') and obj['success'] == True: 
+                    if obj['data']['status'] == 1:
+                        for k in obj['data']['events']:
+                            cmd = obj['data']['events'][k]
+                            print '[cmd]', cmd
+                            lines = os.popen(cmd).readlines()
+                            # ret = os.system(cmd)
+                            post = ''.join(lines)
+                            post = post.decode('gbk')
+                            httpclient.post(self.url + '?r=comet/publish&name=httptelnet-'+self.uid+'-ret', urllib.urlencode({'memo':post}))
+            except:
+                pass
+
 if __name__ == '__main__':
     app = App()
     argv = sys.argv
     #这是方便调试用的
     argv = ['filename.py', '-l', r'http://www.portso.com.cn/apps/deDaemon.php']
-    app.main(argv)
+    app.loadParameters(argv)
     app.run()
