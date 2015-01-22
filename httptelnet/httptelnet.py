@@ -14,6 +14,7 @@ import string
 import re
 import json
 import datetime
+import time
 import math
 import thread
 import threading
@@ -69,6 +70,7 @@ class HttpClient:
         return {'url':response.geturl(), 'info': response.info(), 'content':text}
             
     def get(self, url):
+        print '[get]:', url
         cj = cookielib.LWPCookieJar()
         cookie_support = urllib2.HTTPCookieProcessor(cj)
         opener = urllib2.build_opener(cookie_support, urllib2.HTTPHandler)
@@ -79,7 +81,7 @@ class HttpClient:
         'Accept-Language' : 'zh-cn,zh;q=0.8,en-us;q=0.5,en;q=0.3',
         'Referer' : self.refererURL}
         request = urllib2.Request(url, '', headers)
-        response = urllib2.urlopen(request)
+        response = urllib2.urlopen(request, data=None, timeout=30)
         text = response.read()
         return text
 
@@ -87,7 +89,33 @@ def getDateTimeStr():
     now = datetime.datetime.now()
     return now.strftime('%Y-%m-%d %H:%M:%S')
 
+class ComputerStatusThread(threading.Thread):
+
+    def __init__(self, app, interval):
+        self.httpclient = HttpClient()
+        threading.Thread.__init__(self)
+        self.app = app
+        self.interval = interval
+        self.isRunning = True
+    
+    def run(self):
+        while self.isRunning:
+            try:
+                self.httpclient.get(self.app.url + '?r=computer/UpdateByName&name=httptelnet.'+self.app.uid+'&status=1&memo=' + str(self.app.runCount))
+                time.sleep(self.interval)
+            except:
+                pass
+
+    def stop(self):
+        self.isrunning = False
+
+
 class App:
+
+    def __init__(self):
+        self.runCount = 0
+        self.httpclient = HttpClient()
+
     """
     帮助信息
     """
@@ -123,10 +151,10 @@ class App:
         print 'startup httptelnet server...  uid:', self.uid
 
     def run(self):
-        httpclient = HttpClient()
         while True:
             try:
-                strJson = httpclient.get(self.url + '?r=comet/subscribe&names=httptelnet-'+self.uid+'-cmd')
+                self.runCount = self.runCount + 1
+                strJson = self.httpclient.get(self.url + '?r=comet/subscribe&names=httptelnet.'+self.uid+'.cmd')
                 obj = json.loads(strJson)
                 if type(obj) is types.DictType and obj.has_key('success') and obj['success'] == True: 
                     if obj['data']['status'] == 1:
@@ -137,7 +165,7 @@ class App:
                             # ret = os.system(cmd)
                             post = ''.join(lines)
                             post = post.decode('gbk')
-                            httpclient.post(self.url + '?r=comet/publish&name=httptelnet-'+self.uid+'-ret', urllib.urlencode({'memo':post}))
+                            self.httpclient.post(self.url + '?r=comet/publish&name=httptelnet.'+self.uid+'.ret', urllib.urlencode({'memo':post}))
             except:
                 pass
 
@@ -147,4 +175,6 @@ if __name__ == '__main__':
     #这是方便调试用的
     argv = ['filename.py', '-l', r'http://www.portso.com.cn/apps/deDaemon.php']
     app.loadParameters(argv)
+    computerStatusThread = ComputerStatusThread(app, 300)
+    computerStatusThread.start()
     app.run()
