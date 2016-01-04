@@ -7,7 +7,9 @@ import logging.config
 import urllib
 import thread
 import sys
-logging.config.fileConfig("datacente-dns.log.conf")
+import os
+
+logging.config.fileConfig( os.path.dirname(sys.argv[0]) + "\\datacente-dns.log.conf")
 logger = logging.getLogger("filelog")
 
 from threading import Timer
@@ -70,7 +72,7 @@ class App:
             elif key in ('-n', '--name'):
                 self.computerName = value;
             elif key in ('-i', '--interval'):
-                self.interval = value;
+                self.interval = int(value);
             else:
                 print 'unhandled option ' + key + '=' + value
         self.startTimer();
