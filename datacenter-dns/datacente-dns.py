@@ -21,7 +21,8 @@ import datetime
 class App:
     computerName = 'e6440';
     interval = 2
-    serverUrl = 'http://220.165.250.133:2195/datacenter/public/index.php';
+    #serverUrl = 'http://220.165.250.133:2195/datacenter/public/index.php';
+    serverUrl = 'http://www.dev91.ml/datacenter/public/index.php';
     timer = None
 
     """
@@ -35,17 +36,21 @@ class App:
         print '-s,--server : server url'
 
     def updateIp(self):
-        params = urllib.urlencode({'key': 'pim.equips.'+self.computerName+'.ip', 'value': '{$ip}'})
-        f = urllib.urlopen(self.serverUrl+'?r=appapi/kv/set', params)
-        ret = f.read()
-        logger.debug("updateIp: " + ret)
-        # 获得当前时间
-        now = datetime.datetime.now() # ->这是时间数组格式
-        # 转换为指定的格式:
-        strDatetime = now.strftime("%Y-%m-%d %H:%M:%S")
-        print "["+strDatetime+"] updateIp: " + ret
-        self.timer = threading.Timer(self.interval, self.updateIp)
-        self.timer.start() 
+        ret = None
+        try:
+            params = urllib.urlencode({'key': 'pim.equips.'+self.computerName+'.ip', 'value': '{$ip}'})
+            f = urllib.urlopen(self.serverUrl+'?r=appapi/kv/set', params)
+            ret = f.read()
+            logger.debug("updateIp: " + ret)
+            # 获得当前时间
+            now = datetime.datetime.now() # ->这是时间数组格式
+            # 转换为指定的格式:
+            strDatetime = now.strftime("%Y-%m-%d %H:%M:%S")
+            print "["+strDatetime+"] updateIp: " + ret
+            self.timer = threading.Timer(self.interval, self.updateIp)
+            self.timer.start() 
+        except Exception, e:   
+            logger.error(e)
         return ret
 
     def startTimer(self):
