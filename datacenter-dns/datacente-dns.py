@@ -47,10 +47,10 @@ class App:
             # 转换为指定的格式:
             strDatetime = now.strftime("%Y-%m-%d %H:%M:%S")
             print "["+strDatetime+"] updateIp: " + ret
-            self.timer = threading.Timer(self.interval, self.updateIp)
-            self.timer.start() 
         except Exception, e:   
             logger.error(e)
+        self.timer = threading.Timer(self.interval, self.updateIp)
+        self.timer.start() 
         return ret
 
     def startTimer(self):
