@@ -172,7 +172,7 @@ class App:
     def main(self, argv):
         port = 8000
         try:
-            opts, args = getopt.getopt(argv[1:], 'dl:s:a:', ['help', 'listen=', 'server=', 'auth='])
+            opts, args = getopt.getopt(argv[1:], 'hl:s:a:', ['help', 'listen=', 'server=', 'auth='])
         except getopt.GetoptError, err:
             print str(err)
             self.printHelp()
